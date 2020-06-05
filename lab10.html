@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lab 10</title>
+    <script src="build/three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script>
+
+
+
+        var canvas, renderer, scene, camera; // Standard three.js requirements.
+
+        var controls;  // An OrbitControls object that is used to implement
+        // rotation of the scene using the mouse.  (It actually rotates
+        // the camera around the scene.)
+
+        var animating = false;  // Set to true when an animation is in progress.
+        var frameNumber = 0;  // Frame number is advanced by 1 for each frame while animating.
+
+
+
+        var currentModel;
+
+        /**
+         *  The render function draws the scene.
+         */
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+        /**
+         * This function is called by the init() method to create the world. 
+         */
+        function createWorld() {
+
+            renderer.setClearColor("black"); // Background color for scene.
+            scene = new THREE.Scene();
+
+            // ------------------- Make a camera with viewpoint light ----------------------
+
+            camera = new THREE.PerspectiveCamera(30, canvas.width / canvas.height, 0.1, 100);
+            camera.position.z = 30;
+            var light;  // A light shining from the direction of the camera; moves with the camera.
+            light = new THREE.DirectionalLight();
+            light.position.set(0, 0, 1);
+            camera.add(light);
+            scene.add(camera);
+
+            //------------------- Create the scene's visible objects ----------------------
+
+            var pawn = Pawn();
+            pawn.translateY(4);
+            pawn.translateX(-5);
+            var bishop = Bishop();
+            bishop.translateY(4);
+            bishop.translateX(5);
+            scene.add(pawn);
+            scene.add(bishop);
+
+
+        } // end function createWorld()
+
+        function Bishop() {
+            var model;
+
+            var sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 32, 16),
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+            sphere.scale.set(0.25, 0.12, 0.25);
+            sphere.translateY(1.8);
+
+
+            var cylinder = new THREE.Mesh(
+                new THREE.CylinderGeometry(1, 1, 0.2, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            cylinder.translateY(-1.8);
+
+            var sphere1 = new THREE.Mesh(
+                new THREE.SphereGeometry(1.5, 32, 16),
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+            sphere1.scale.set(1, 0.15, 1);
+            sphere1.translateY(-2);
+
+            var sphere2 = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 32, 16),
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+            sphere2.scale.set(1, 0.15, 1);
+            sphere2.translateY(-2.3);
+
+            var sphere3 = new THREE.Mesh(
+                new THREE.SphereGeometry(1.2, 32, 16),
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+            sphere3.scale.set(1, 0.15, 1);
+            sphere3.translateY(-1.6);
+
+
+
+      
+            var head = new THREE.Object3D();
+            head = BezierCurveTo3D(0,0,2.9, -0.2, 0.9, 2.84, 0, 3.34);
+            head.translateY(-1.7);
+
+            var shaft = new THREE.Object3D();
+            shaft = BezierCurveTo3D(2,0.15,1.63,0.87,1.46,1.93,1.34,3.38);
+            shaft.translateY(-7);
+            shaft.scale.set(0.7,1.5,0.7);
+
+            var base1 = new THREE.Object3D();
+            base1 = BezierCurveTo3D(0.32,0.03,0,0.69,1.6,1.15,0,1.08);
+            base1.translateY(-8.5);
+            base1.scale.set(2.5,2,2.5);
+
+            var base2 = new THREE.Object3D();
+            base2 = BezierCurveTo3D(0,0,1.1,0,1.2,1.5,0,1.5);
+            base2.translateY(-9);
+            base2.scale.set(3,1.5,3);
+
+            var bottom = new THREE.Mesh(
+                new THREE.CylinderGeometry(3, 3, 0.4, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            bottom.translateY(-8.8);
+
+            model = new THREE.Object3D();
+            model.add(sphere);
+            model.add(shaft);
+            model.add(base1);
+            model.add(base2);
+            model.add(cylinder);
+            model.add(sphere1);
+            model.add(sphere2);
+            model.add(sphere3);
+            model.add(head);
+            model.add(bottom);
+            return model;
+        }
+
+        function BezierCurveTo3D(x1,y1,x2,y2,x3,y3,x4,y4){
+            var points = new Array();
+
+            for (let t = 0; t <= 1; t += 0.01) {
+                let x = Math.pow((1 - t), 3) * x1 + 3 * 
+                Math.pow((1 - t), 2) * t * x2 + 3 * (1 - t) * 
+                Math.pow(t, 2) * x3 + 
+                Math.pow(t, 3) * x4;
+
+                let y = Math.pow((1 - t), 3) * y1 + 3 * 
+                Math.pow((1 - t), 2) * t * y2 + 3 * (1 - t) * 
+                Math.pow(t, 2) * y3 + 
+                Math.pow(t, 3) * y4;
+
+                points.push(new THREE.Vector2(x, y));
+            }
+            var shape = new THREE.LatheGeometry(points, 360);
+            
+            var shape3D = new THREE.Mesh(
+                shape,
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+
+            return shape3D;
+        }
+
+        function Pawn() {
+            var model;
+
+            var sphere = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 32, 16),
+                new THREE.MeshLambertMaterial({
+                    color: "white"
+                })
+            );
+
+
+            var cone = new THREE.Mesh(
+                new THREE.ConeGeometry(2, 0.5, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            cone.translateY(-2);
+
+            var coneBase = new THREE.Mesh(
+                new THREE.CylinderGeometry(2, 2, 0.2, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            coneBase.translateY(-2.35);
+
+
+
+            var p1 = new Array();
+            for (let i = 3.1; i >= 0.5; i -= 0.2) {
+                p1.push(new THREE.Vector2(i, (Math.sin(i + 1.5) * 2 + 2)));
+            }
+            var base = new THREE.LatheGeometry(p1, 360);
+
+            var bottom = new THREE.Mesh(
+                new THREE.CylinderGeometry(3, 3, 0.4, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            bottom.translateY(-8.5);
+
+            var bottom1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(2.7, 2.7, 0.4, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            bottom1.translateY(-8.8);
+
+            var bottom2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(3, 3, 0.4, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            bottom2.translateY(-9.2);
+
+            var b = new THREE.Mesh(
+                new THREE.CylinderGeometry(1, 1, 0.1, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            b.translateY(-2);
+            var b1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.8, 0.8, 0.2, 360),
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            b1.translateY(-2);
+
+
+
+            var base1 = new THREE.Mesh(
+                base,
+                new THREE.MeshPhongMaterial({
+                    color: "white"
+                })
+            );
+            base1.translateY(-8.5);
+            base1.scale.set(1, 1.7, 1);
+
+            model = new THREE.Object3D();
+            model.add(bottom);
+            model.add(bottom1);
+            model.add(bottom2);
+            model.add(b);
+            model.add(b1);
+            model.add(coneBase);
+            model.add(base1);
+            model.add(cone);
+            model.add(sphere);
+
+            return model;
+        }
+
+        /**
+         *  This function is called once for each frame of the animation, before
+         *  the render() function is called for that frame.  It updates any
+         *  animated properties.  The value of the global variable frameNumber
+         *  is incrementd 1 before this function is called.
+         */
+        function updateForFrame() {
+
+            // Update size and rotation of tempObject.  DELETE THIS!
+            var loopFrame = frameNumber % 240;
+            if (loopFrame > 120) {
+                loopFrame = 240 - loopFrame;
+            }
+            var scaleFactor = 1 + loopFrame / 120;
+
+
+
+            currentModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            currentModel.rotation.y += 0.01;
+
+
+
+        }
+
+
+        /* ---------------------------- MOUSE AND ANIMATION SUPPORT ------------------
+        
+        /**
+         *  This page uses THREE.OrbitControls to let the user use the mouse to rotate
+         *  the view.  OrbitControls are designed to be used during an animation, where
+         *  the rotation is updated as part of preparing for the next frame.  The scene
+         *  is not automatically updated just because the user drags the mouse.  To get
+         *  the rotation to work without animation, I add another mouse listener to the
+         *  canvas, just to call the render() function when the user drags the mouse.
+         *  The same thing holds for touch events -- I call render for any mouse move
+         *  event with one touch.
+         */
+        function installOrbitControls() {
+            controls = new THREE.OrbitControls(camera, canvas);
+            controls.noPan = true;
+            controls.noZoom = true;
+            controls.staticMoving = true;
+            function move() {
+                controls.update();
+                if (!animating) {
+                    render();
+                }
+            }
+            function down() {
+                document.addEventListener("mousemove", move, false);
+            }
+            function up() {
+                document.removeEventListener("mousemove", move, false);
+            }
+            function touch(event) {
+                if (event.touches.length == 1) {
+                    move();
+                }
+            }
+            canvas.addEventListener("mousedown", down, false);
+            canvas.addEventListener("touchmove", touch, false);
+        }
+
+        /*  Called when user changes setting of the Animate checkbox. */
+        function doAnimateCheckbox() {
+            var run = document.getElementById("animateCheckbox").checked;
+            if (run != animating) {
+                animating = run;
+                if (animating) {
+                    requestAnimationFrame(doFrame);
+                }
+            }
+        }
+
+        /*  Drives the animation, called by system through requestAnimationFrame() */
+        function doFrame() {
+            if (animating) {
+                frameNumber++;
+                updateForFrame();
+                render();
+                requestAnimationFrame(doFrame);
+            }
+        }
+
+        /*----------------------------- INITIALIZATION ----------------------------------------
+        
+        /**
+         *  This function is called by the onload event so it will run after the
+         *  page has loaded.  It creates the renderer, canvas, and scene objects,
+         *  calls createWorld() to add objects to the scene, and renders the
+         *  initial view of the scene.  If an error occurs, it is reported.
+         */
+        function init() {
+            try {
+                canvas = document.getElementById("glcanvas");
+                renderer = new THREE.WebGLRenderer({
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: false
+                });
+            }
+            catch (e) {
+                document.getElementById("message").innerHTML = "<b>Sorry, an error occurred:<br>" +
+                    e + "</b>";
+                return;
+            }
+            document.getElementById("animateCheckbox").checked = false;
+            document.getElementById("animateCheckbox").onchange = doAnimateCheckbox;
+            createWorld();
+            installOrbitControls();
+            render();
+        }
+
+    </script>
+</head>
+
+<body onload="init()">
+
+    <h2>Chess pawn</h2>
+
+    <noscript>
+        <p style="color: #AA0000; font-weight: bold">Sorry, but this page requires JavaScript!</p>
+    </noscript>
+
+    <p style="color:#AA0000; font-weight: bold" id="message">
+    </p>
+
+    <p>
+        <label><input type="checkbox" id="animateCheckbox"><b>Animate</b></label>
+        <b style="margin-left:50px">Use the mouse to rotate the model.</b>
+    </p>
+
+    <div id="canvas-holder" style="float:left; border: thin solid black; background-color: white">
+        <canvas width=1200 height=600 id="glcanvas"></canvas>
+    </div>
+
+</body>
+
+</html>
